@@ -1,0 +1,13 @@
+https://www.youtube.com/watch?v=uAKzFhE3rxU&t=4341s&ab_channel=CodewithVlad
+
+43:59
+
+
+@scottamolinari
+1 rok temu
+Hey. Nice video. Some points of interest.
+
+1. @Injectable tells Nest to reflect on the constructor and see if there are dependencies it needs to inject into it. If there are no dependencies to inject, you don't need the decorator.
+2. You can store tokens in local storage on the client, however they are open to an XSS attack and with 7 days (for the refresh token), a lot of damage can be done. I'd suggest storing the refresh token in an http only cookie. This avoids XSS attacks, as attackers won't be able to get access to the cookie. You should also add the "/refresh" path to the cookie too, so the cookie is only sent on requests made to the "/refresh" endpoint.
+
+Używać tylko argon2
