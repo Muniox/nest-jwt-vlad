@@ -28,6 +28,8 @@ export class User extends BaseEntity {
   @Column()
   hash: string;
 
-  @Column()
+  @Column({
+    nullable: true,
+  })
   hashedRT: string;
 }

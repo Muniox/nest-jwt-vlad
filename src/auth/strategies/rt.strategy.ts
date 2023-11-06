@@ -1,7 +1,9 @@
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { Request } from 'express';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 
+@Injectable()
 export class RtStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
   constructor() {
     super({
@@ -10,12 +12,16 @@ export class RtStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
           return req && req.cookies ? req.cookies?.Refresh ?? null : null;
         },
       ]),
-      secretOrKey: 'at-secret',
+      secretOrKey: 'rt-secret',
       passReqToCallback: true,
     });
   }
 
-  validate(payload: any) {
-    return payload;
+  validate(req: Request, payload: any) {
+    const refreshToken = req.cookies?.Refresh;
+    return {
+      ...payload,
+      refreshToken,
+    };
   }
 }
