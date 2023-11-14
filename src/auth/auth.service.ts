@@ -77,14 +77,14 @@ export class AuthService {
       .json({ ok: true });
   }
 
-  async logout(userId: number) {
+  async logout(userId: string) {
     await User.update(
       { id: userId, hashedRT: Not(IsNull()) },
       { hashedRT: null },
     );
   }
 
-  async refreshTokens(userId: number, rt: string | null, res: Response) {
+  async refreshTokens(userId: string, rt: string | null, res: Response) {
     const user = await User.findOne({ where: { id: userId } });
 
     if (!user || !user.hashedRT) throw new UnauthorizedException();
@@ -125,7 +125,7 @@ export class AuthService {
     return user;
   }
 
-  async getTokens(userId: number, email: string): Promise<Tokens> {
+  async getTokens(userId: string, email: string): Promise<Tokens> {
     // TODO: lepsze niż promise all
     const [at, rt] = await Promise.all([
       this.jwtService.signAsync(
@@ -149,14 +149,15 @@ export class AuthService {
         },
       ),
     ]);
+
     return {
       access_token: at,
       refresh_token: rt,
     };
   }
 
-  async updateRtHash(userId: number, rt: string) {
-    const hash = await hashData(rt);
-    await User.update({ id: userId }, { hashedRT: hash });
+  async updateRtHash(userId: string, rt: string) {
+    const hashRT = await hashData(rt);
+    await User.update({ id: userId }, { hashedRT: hashRT });
   }
 }

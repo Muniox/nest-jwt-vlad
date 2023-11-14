@@ -12,8 +12,8 @@ import { AuthService } from './auth.service';
 import { AuthDto } from './dto';
 import { Tokens } from '../types';
 import { Response } from 'express';
-import { AtGuard, RtGuard } from './guards';
-import { GetCurrentUser, GetCurrentUserId, Public } from './decorators';
+import { RtGuard } from './guards';
+import { User, Public } from './decorators';
 import { Request } from 'express';
 
 @Controller('auth')
@@ -39,7 +39,7 @@ export class AuthController {
 
   @HttpCode(HttpStatus.OK)
   @Post('/logout')
-  async logout(@GetCurrentUserId() userId: number) {
+  async logout(@User('sub') userId: string) {
     return this.authService.logout(userId);
   }
 
@@ -49,8 +49,8 @@ export class AuthController {
   @Post('/refresh')
   async refreshTokens(
     @Req() req: Request,
-    @GetCurrentUser('refreshToken') refreshToken: string,
-    @GetCurrentUserId() userId: number,
+    @User('refreshToken') refreshToken: string,
+    @User('sub') userId: string,
     @Res() res: Response,
   ) {
     console.log(req.user);
