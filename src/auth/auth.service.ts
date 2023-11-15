@@ -8,13 +8,18 @@ import { User } from '../entity/user.entity';
 import { hashData } from '../utlis/hash-helper';
 import * as argon2 from 'argon2';
 import { JwtService } from '@nestjs/jwt';
-import { Tokens } from '../types';
+import { CookieNames, Tokens } from '../types';
 import { Response } from 'express';
 import { IsNull, Not } from 'typeorm';
+import { AtCookieConfig, RtCookieConfig } from '../config';
 
 @Injectable()
 export class AuthService {
-  constructor(private jwtService: JwtService) {}
+  constructor(
+    private jwtService: JwtService,
+    private rtCookieConfig: RtCookieConfig,
+    private atCookieConfig: AtCookieConfig,
+  ) {}
   async signUpLocal(dto: AuthDto, res: Response): Promise<any> {
     const user = await User.findOne({ where: { email: dto.email } });
 
@@ -27,21 +32,11 @@ export class AuthService {
     newUser.hash = await hashData(dto.password);
     await newUser.save();
 
-    const tokens = await this.getTokens(newUser.id, newUser.email);
-    await this.updateRtHash(newUser.id, tokens.refresh_token);
+    const tokens = await this.getAndUpdateTokens(user);
 
     return res
-      .cookie('Refresh', tokens.refresh_token, {
-        secure: false,
-        domain: 'localhost',
-        httpOnly: true,
-        path: '/auth/refresh',
-      })
-      .cookie('Authorization', tokens.access_token, {
-        secure: false,
-        domain: 'localhost',
-        httpOnly: true,
-      })
+      .cookie(CookieNames.REFRESH, tokens.refreshToken, this.rtCookieConfig)
+      .cookie(CookieNames.ACCESS, tokens.accessToken, this.atCookieConfig)
       .json({ ok: true });
   }
 
@@ -58,23 +53,18 @@ export class AuthService {
       throw new UnauthorizedException();
     }
 
-    // powtarzanie kodu
-    const tokens = await this.getTokens(user.id, user.email);
-    await this.updateRtHash(user.id, tokens.refresh_token);
+    const tokens = await this.getAndUpdateTokens(user);
 
     return res
-      .cookie('Refresh', tokens.refresh_token, {
-        secure: false,
-        domain: 'localhost',
-        httpOnly: true,
-        path: '/auth/refresh',
-      })
-      .cookie('Authorization', tokens.access_token, {
-        secure: false,
-        domain: 'localhost',
-        httpOnly: true,
-      })
+      .cookie(CookieNames.REFRESH, tokens.refreshToken, this.rtCookieConfig)
+      .cookie(CookieNames.ACCESS, tokens.accessToken, this.atCookieConfig)
       .json({ ok: true });
+  }
+
+  private async getAndUpdateTokens(user: User) {
+    const tokens = await this.getTokens(user.id, user.email);
+    await this.updateRtHash(user.id, tokens.refreshToken);
+    return tokens;
   }
 
   async logout(userId: string) {
@@ -92,22 +82,11 @@ export class AuthService {
     const rtMatches = await argon2.verify(user.hashedRT, rt);
     if (!rtMatches) throw new UnauthorizedException();
 
-    // powtarzanie kodu
-    const tokens = await this.getTokens(user.id, user.email);
-    await this.updateRtHash(user.id, tokens.refresh_token);
+    const tokens = await this.getAndUpdateTokens(user);
 
     return res
-      .cookie('Refresh', tokens.refresh_token, {
-        secure: false,
-        domain: 'localhost',
-        httpOnly: true,
-        path: '/auth/refresh',
-      })
-      .cookie('Authorization', tokens.access_token, {
-        secure: false,
-        domain: 'localhost',
-        httpOnly: true,
-      })
+      .cookie(CookieNames.REFRESH, tokens.refreshToken, this.rtCookieConfig)
+      .cookie(CookieNames.ACCESS, tokens.accessToken, this.atCookieConfig)
       .json({ ok: true });
   }
 
@@ -126,37 +105,25 @@ export class AuthService {
   }
 
   async getTokens(userId: string, email: string): Promise<Tokens> {
-    // TODO: lepsze niż promise all
+    const payload = { sub: userId, email };
     const [at, rt] = await Promise.all([
-      this.jwtService.signAsync(
-        {
-          sub: userId,
-          email,
-        },
-        {
-          secret: 'at-secret',
-          expiresIn: '15m',
-        },
-      ),
-      this.jwtService.signAsync(
-        {
-          sub: userId,
-          email,
-        },
-        {
-          secret: 'rt-secret',
-          expiresIn: '7d',
-        },
-      ),
+      this.jwtService.signAsync(payload, {
+        secret: 'at-secret',
+        expiresIn: '15m',
+      }),
+      this.jwtService.signAsync(payload, {
+        secret: 'rt-secret',
+        expiresIn: '7d',
+      }),
     ]);
 
     return {
-      access_token: at,
-      refresh_token: rt,
+      accessToken: at,
+      refreshToken: rt,
     };
   }
 
-  async updateRtHash(userId: string, rt: string) {
+  private async updateRtHash(userId: string, rt: string) {
     const hashRT = await hashData(rt);
     await User.update({ id: userId }, { hashedRT: hashRT });
   }

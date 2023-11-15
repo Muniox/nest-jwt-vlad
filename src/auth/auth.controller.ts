@@ -15,6 +15,7 @@ import { Response } from 'express';
 import { RtGuard } from './guards';
 import { User, Public } from './decorators';
 import { Request } from 'express';
+import { UserATRequest } from '../types/user-at.type';
 
 @Controller('auth')
 export class AuthController {
@@ -39,7 +40,7 @@ export class AuthController {
 
   @HttpCode(HttpStatus.OK)
   @Post('/logout')
-  async logout(@User('sub') userId: string) {
+  async logout(@User('sub') userId: UserATRequest['sub']) {
     return this.authService.logout(userId);
   }
 
