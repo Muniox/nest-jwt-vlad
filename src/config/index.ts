@@ -1,4 +1,4 @@
-export * from './at-cookie-config.service';
+export * from './at-cookie.config';
 export * from './env-validation.config';
-export * from './rt-cookie-config.service';
+export * from './rt-cookie.confige';
 export * from './typeorm.config';
