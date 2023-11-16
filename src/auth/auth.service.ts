@@ -12,15 +12,31 @@ import { CookieNames, Tokens } from '../types';
 import { Response } from 'express';
 import { IsNull, Not } from 'typeorm';
 import { AtCookieConfig, RtCookieConfig } from '../config';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
   constructor(
     private jwtService: JwtService,
+    private configService: ConfigService,
     private rtCookieConfig: RtCookieConfig,
     private atCookieConfig: AtCookieConfig,
   ) {}
-  async signUpLocal(dto: AuthDto, res: Response): Promise<any> {
+
+  private readonly jwtSecretActivationToken = this.configService.get<string>(
+    'JWT_SECRET_ACCESS_TOKEN',
+  );
+
+  private readonly jwtExpirationTimeActivationToken =
+    this.configService.get<string>('JWT_EXPIRATION_TIME_ACCESS_TOKEN');
+
+  private readonly jwtSecretRefreshToken = this.configService.get<string>(
+    'JWT_SECRET_REFRESH_TOKEN',
+  );
+  private readonly jwtExpirationTimeRefreshToken =
+    this.configService.get<string>('JWT_EXPIRATION_TIME_REFRESH_TOKEN');
+
+  async register(dto: AuthDto, res: Response): Promise<any> {
     const user = await User.findOne({ where: { email: dto.email } });
 
     if (user) {
@@ -61,17 +77,16 @@ export class AuthService {
       .json({ ok: true });
   }
 
-  private async getAndUpdateTokens(user: User) {
-    const tokens = await this.getTokens(user.id, user.email);
-    await this.updateRtHash(user.id, tokens.refreshToken);
-    return tokens;
-  }
-
-  async logout(userId: string) {
+  async logout(userId: string, res: Response) {
     await User.update(
       { id: userId, hashedRT: Not(IsNull()) },
       { hashedRT: null },
     );
+
+    return res
+      .clearCookie(CookieNames.ACCESS)
+      .clearCookie(CookieNames.REFRESH)
+      .json({ message: 'ok' });
   }
 
   async refreshTokens(userId: string, rt: string | null, res: Response) {
@@ -104,16 +119,22 @@ export class AuthService {
     return user;
   }
 
+  private async getAndUpdateTokens(user: User) {
+    const tokens = await this.getTokens(user.id, user.email);
+    await this.updateRtHash(user.id, tokens.refreshToken);
+    return tokens;
+  }
+
   async getTokens(userId: string, email: string): Promise<Tokens> {
     const payload = { sub: userId, email };
     const [at, rt] = await Promise.all([
       this.jwtService.signAsync(payload, {
-        secret: 'at-secret',
-        expiresIn: '15m',
+        secret: this.jwtSecretActivationToken,
+        expiresIn: this.jwtExpirationTimeActivationToken,
       }),
       this.jwtService.signAsync(payload, {
-        secret: 'rt-secret',
-        expiresIn: '7d',
+        secret: this.jwtSecretRefreshToken,
+        expiresIn: this.jwtExpirationTimeRefreshToken,
       }),
     ]);
 

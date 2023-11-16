@@ -23,27 +23,26 @@ export class AuthController {
 
   @Public()
   @HttpCode(HttpStatus.CREATED)
-  @Post('/local/signup')
-  async signupLocal(
-    @Body() dto: AuthDto,
-    @Res() res: Response,
-  ): Promise<Tokens> {
-    return this.authService.signUpLocal(dto, res);
+  @Post('/register')
+  async register(@Body() dto: AuthDto, @Res() res: Response): Promise<Tokens> {
+    return this.authService.register(dto, res);
   }
 
   @Public()
   @HttpCode(HttpStatus.OK)
-  @Post('/local/login')
+  @Post('/login')
   async login(@Body() dto: AuthDto, @Res() res: Response) {
     return this.authService.login(dto, res);
   }
 
   @HttpCode(HttpStatus.OK)
   @Post('/logout')
-  async logout(@User('sub') userId: UserATRequest['sub']) {
-    return this.authService.logout(userId);
+  async logout(
+    @User('sub') userId: UserATRequest['sub'],
+    @Res() res: Response,
+  ) {
+    return this.authService.logout(userId, res);
   }
-
   @Public()
   @UseGuards(RtGuard)
   @HttpCode(HttpStatus.OK)
@@ -54,7 +53,6 @@ export class AuthController {
     @User('sub') userId: string,
     @Res() res: Response,
   ) {
-    console.log(req.user);
     return this.authService.refreshTokens(userId, refreshToken, res);
   }
 }
