@@ -5,6 +5,7 @@ import { User } from '../entity/user.entity';
 export const getTypeOrmConfig = (
   configService: ConfigService,
 ): TypeOrmModuleOptions => ({
+  //TODO: better env naming!
   type: 'mysql',
   host: 'localhost',
   port: 3306,

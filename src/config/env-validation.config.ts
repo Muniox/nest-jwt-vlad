@@ -1,6 +1,7 @@
 import * as Joi from 'joi';
 
 export const envValidationObjectSchema = Joi.object({
+  //TODO: better env naming!
   PORT: Joi.number().required(),
   APP_DOMAIN: Joi.string().required(),
 
