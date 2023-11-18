@@ -11,8 +11,7 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe());
 
   const configService = app.get(ConfigService);
-  //TODO: better env naming!
-  const PORT = configService.get<number>('PORT');
+  const PORT = configService.get<number>('APP_PORT');
   await app.listen(PORT);
 }
 bootstrap();
