@@ -14,15 +14,15 @@ export class User extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @CreateDateColumn({
-    unique: true,
-  })
+  @CreateDateColumn()
   createdAt: Date;
 
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @Column()
+  @Column({
+    unique: true,
+  })
   email: string;
 
   @Column()
