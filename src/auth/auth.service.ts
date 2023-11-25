@@ -48,7 +48,7 @@ export class AuthService {
     newUser.hash = await hashData(dto.password);
     await newUser.save();
 
-    const tokens = await this.getAndUpdateTokens(user);
+    const tokens = await this.getAndUpdateTokens(newUser);
 
     return res
       .cookie(CookieNames.REFRESH, tokens.refreshToken, this.rtCookieConfig)
