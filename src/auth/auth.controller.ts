@@ -12,7 +12,7 @@ import { AuthService } from './auth.service';
 import { AuthDto } from './dto';
 import { Tokens } from '../types';
 import { Response } from 'express';
-import { RtGuard } from './guards';
+import { RtGuard, LocalAuthGuard } from './guards';
 import { User, Public } from './decorators';
 import { Request } from 'express';
 import { UserATRequest } from '../types/user-at.type';
@@ -29,6 +29,7 @@ export class AuthController {
   }
 
   @Public()
+  @UseGuards(LocalAuthGuard)
   @HttpCode(HttpStatus.OK)
   @Post('/login')
   async login(@Body() dto: AuthDto, @Res() res: Response) {

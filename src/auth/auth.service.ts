@@ -57,17 +57,18 @@ export class AuthService {
   }
 
   async login(dto: AuthDto, res: Response) {
+    // TODO: user powinien być zwracany z req
     const user = await User.findOne({ where: { email: dto.email } });
-
-    if (!user) {
-      throw new UnauthorizedException();
-    }
-
-    const passwordMatches = await argon2.verify(user.hash, dto.password);
-
-    if (!passwordMatches) {
-      throw new UnauthorizedException();
-    }
+    //
+    // if (!user) {
+    //   throw new UnauthorizedException();
+    // }
+    //
+    // const passwordMatches = await argon2.verify(user.hash, dto.password);
+    //
+    // if (!passwordMatches) {
+    //   throw new UnauthorizedException();
+    // }
 
     const tokens = await this.getAndUpdateTokens(user);
 

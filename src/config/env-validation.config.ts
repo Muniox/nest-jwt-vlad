@@ -2,7 +2,7 @@ import * as Joi from 'joi';
 
 export const envValidationObjectSchema = Joi.object({
   //APP
-  PORT: Joi.number().required(),
+  APP_PORT: Joi.number().required(),
   APP_DOMAIN: Joi.string().required(),
   APP_REFRESH_PATH: Joi.string().required(),
   //DATABASE
